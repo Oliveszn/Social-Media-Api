@@ -36,6 +36,7 @@ const resgiterUser = async (req, res) => {
 
     const { accessToken, refreshToken } = await generateTokens(user);
 
+    ///here we send both tokens to frontend
     res.status(201).json({
       success: true,
       message: "User registered successfully!",
@@ -101,7 +102,9 @@ const loginUser = async (req, res) => {
 const refreshTokenUser = async (req, res) => {
   logger.info("Refresh token endpoint hit...");
   try {
+    //refresh sent from body
     const { refreshToken } = req.body;
+    //we check if refresh token is missing
     if (!refreshToken) {
       logger.warn("Refresh token missing");
       return res.status(400).json({
@@ -110,9 +113,8 @@ const refreshTokenUser = async (req, res) => {
       });
     }
 
+    //if thers a refreshtoken sent we check the db to confirm it exists
     const storedToken = await RefreshToken.findOne({ token: refreshToken });
-
-    // const storedToken = await RefreshToken.deleteOne({ token: refreshToken });
 
     if (!storedToken) {
       logger.warn("Invalid refresh token provided");
@@ -122,6 +124,7 @@ const refreshTokenUser = async (req, res) => {
       });
     }
 
+    ///we confirm if the token is not found or its expired
     if (!storedToken || storedToken.expiresAt < new Date()) {
       logger.warn("Invalid or expired refresh token");
 
@@ -131,6 +134,7 @@ const refreshTokenUser = async (req, res) => {
       });
     }
 
+    //we look for the user who owns the token
     const user = await User.findById(storedToken.user);
 
     if (!user) {
@@ -141,13 +145,13 @@ const refreshTokenUser = async (req, res) => {
         message: `User not found`,
       });
     }
-
+    //then genrate new access & refresh tokens if theres a refresh token
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
       await generateTokens(user);
 
-    //delete the old refresh token
+    //delete the old refresh token cos we generated a new one
     await RefreshToken.deleteOne({ _id: storedToken._id });
-
+    //send tokens back
     res.json({
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
