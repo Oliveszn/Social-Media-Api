@@ -1,9 +1,9 @@
 const express = require("express");
 const {
   createPost,
-  //   getAllPosts,
-  //   getPost,
-  //   deletePost,
+  getAllPosts,
+  getSinglePost,
+  deletePost,
 } = require("../controllers/PostController");
 const { authenticateRequest } = require("../middleware/authMiddleware");
 
@@ -13,8 +13,8 @@ const router = express();
 router.use(authenticateRequest);
 
 router.post("/create-post", createPost);
-// router.get("/all-posts", getAllPosts);
-// router.get("/:id", getPost);
-// router.delete("/:id", deletePost);
+router.get("/all-posts", getAllPosts);
+router.get("/:id", getSinglePost);
+router.delete("/:id", deletePost);
 
 module.exports = router;
