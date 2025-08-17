@@ -54,7 +54,7 @@ const proxyOptions = {
   },
 };
 
-//setting up proxy for our authentication service
+//setting up proxy for authentication service
 app.use(
   "/v1/auth",
   proxy(process.env.AUTH_SERVICE_URL, {
@@ -73,7 +73,7 @@ app.use(
   })
 );
 
-//setting up proxy for our post service
+//setting up proxy for post service
 app.use(
   "/v1/posts",
   validateToken,
@@ -95,6 +95,31 @@ app.use(
   })
 );
 
+//setting up proxy for media service
+app.use(
+  "/v1/media",
+  validateToken,
+  proxy(process.env.MEDIA_SERVICE_URL, {
+    ...proxyOptions,
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      proxyReqOpts.headers["x-user-id"] = srcReq.user.userId;
+      if (!srcReq.headers["content-type"].startsWith("multipart/form-data")) {
+        proxyReqOpts.headers["Content-Type"] = "application/json";
+      }
+
+      return proxyReqOpts;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+      logger.info(
+        `Response received from media service: ${proxyRes.statusCode}`
+      );
+
+      return proxyResData;
+    },
+    parseReqBody: false,
+  })
+);
+
 app.use(errorHandler);
 
 app.listen(PORT, () => {
@@ -105,9 +130,9 @@ app.listen(PORT, () => {
   logger.info(
     `Post service is running on port ${process.env.POST_SERVICE_URL}`
   );
-  //   logger.info(
-  //     `Media service is running on port ${process.env.MEDIA_SERVICE_URL}`
-  //   );
+  logger.info(
+    `Media service is running on port ${process.env.MEDIA_SERVICE_URL}`
+  );
   //   logger.info(
   //     `Search service is running on port ${process.env.SEARCH_SERVICE_URL}`
   //   );
